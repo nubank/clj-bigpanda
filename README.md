@@ -7,10 +7,10 @@ Feel free to contribute!
 ## Usage
 
 ````clojure
-(require '[clj-bigpanda.metrics :as metrics])
+(require '[clj-bigpanda.events :as events])
 
-; pass it an email, api key, list of gauges, and a list of counters
-(metrics/collate "me@mydomain.com" "my-api-key" [{:name "gauge 1" :value 34 } {:name "gauge 2" :value 0}] 
+; pass it your token, app key and a list of alerts
+(events/collate "me@mydomain.com" "my-api-key" [{:name "gauge 1" :value 34 } {:name "gauge 2" :value 0}] 
                                                 [{:name "a counter" :value 79213}])
 ````
 
