@@ -1,4 +1,4 @@
-(ns clj-bigpanda.metrics
+(ns clj-bigpanda.events
   (:use [slingshot.slingshot :only [try+]])
   (:require [cheshire.core   :as json]
             [clj-http.client :as client]
@@ -45,47 +45,47 @@
 (defn request
   "Constructs the HTTP client request map.
   options will be merged verbatim into the request map."
-  ([user api-key params]
-   {:basic-auth [user api-key]
+  ([token appkey params]
+   {:basic-auth [token appkey]
     :content-type :json
     :accept :json
     :throw-entire-message? true
     :query-params (unparse-kw params)})
-  ([user api-key params body]
-   (assoc (request user api-key params)
+  ([token appkey params body]
+   (assoc (request token appkey params)
      :body (json/generate-string (unparse-kw body)))))
 
 (defn collate
-  "Posts a set of gauges and counters. options is a map of clj-http options."
-  ([user api-key gauges counters]
-     (collate user api-key gauges counters nil))
-  ([user api-key gauges counters options]
-     (assert (every? :name gauges))
+  "Posts a set of alerts and counters. options is a map of clj-http options."
+  ([token appkey alerts counters]
+     (collate token appkey alerts counters nil))
+  ([token appkey alerts counters options]
+     (assert (every? :name alerts))
      (assert (every? :name counters))
-     (assert (every? :value gauges))
+     (assert (every? :value alerts))
      (assert (every? :value counters))
-     (client/post (uri "metrics")
+     (client/post (uri "")
                   (merge
                    options
-                   (request user api-key {}
-                            {:gauges gauges :counters counters})))))
+                   (request token appkey {}
+                            {:alerts alerts :counters counters})))))
 
-(defn metric
-  "Gets a metric by name.
+(defn event
+  "Gets an event by name.
 
-  See http://dev.bigpanda.com/v1/get/metrics"
-  ([user api-key name]
-   (metric user api-key name {} nil))
-  ([user api-key name params]
-   (metric user api-key name params nil))
+  See http://dev.bigpanda.com/v1/get/events"
+  ([token appkey name]
+   (event token appkey name {} nil))
+  ([token appkey name params]
+   (event token appkey name params nil))
 
-  ([user api-key name params options]
+  ([token appkey name params options]
    (assert name)
    (try+
-     (let [body (-> (client/get (uri "metrics" name)
+     (let [body (-> (client/get (uri "events" name)
                                 (merge
                                  options
-                                 (request user api-key params)))
+                                 (request token appkey params)))
                   :body json/parse-string parse-kw)]
        (assoc body :measurements
               (into {} (map (fn [[source measurements]]
@@ -95,71 +95,71 @@
        (prn "caught 404")
        nil))))
 
-(defn create-annotation
-  "Creates a new annotation, and returns the created annotation as a map.
+(defn create-deployment
+  "Creates a new deployment, and returns the created deployment as a map.
 
-  http://dev.bigpanda.com/v1/post/annotations/:name"
-  ([user api-key name annotation]
-     (create-annotation user api-key name annotation nil))
-  ([user api-key name annotation options]
+  http://dev.bigpanda.com/v1/post/deployments/:name"
+  ([token appkey name deployment]
+     (create-deployment token appkey name deployment nil))
+  ([token appkey name deployment options]
      {:pre [(or (nil? options)(map? options))]}
      (assert name)
-     (-> (client/post (uri "annotations" name)
+     (-> (client/post (uri "deployments" name)
                       (merge
                        options
-                       (request user api-key {} annotation)))
+                       (request token appkey {} deployment)))
          :body
          json/parse-string
          parse-kw)))
 
-(defn update-annotation
-  "Updates an annotation.
+(defn update-deployment
+  "Updates an deployment.
 
-  http://dev.bigpanda.com/v1/put/annotations/:name/events/:id"
-  ([user api-key name id annotation]
-     (update-annotation user api-key name id annotation nil))
-  ([user api-key name id annotation options]
+  http://dev.bigpanda.com/v1/put/deployments/:name/events/:id"
+  ([token appkey name id deployment]
+     (update-deployment token appkey name id deployment nil))
+  ([token appkey name id deployment options]
      (assert name)
      (assert id)
-     (client/put (uri "annotations" name id)
+     (client/put (uri "deployments" name id)
                  (merge
                   options
-                  (request user api-key {} annotation)))))
+                  (request token appkey {} deployment)))))
 
 (let [warn-on-deprecate (atom true)]
   ;; Deprecated due to argument ambiguity.
-  ;; A future version could rename create-annotation as annotate.
-  (defn annotate
-    "Creates or updates an annotation. If id is given, updates. If id is
-    missing, creates a new annotation."
-    ([user api-key name annotation]
-       (create-annotation user api-key name annotation nil))
-    ([user api-key name annotation options]
-       (if (map? annotation)
-         (create-annotation user api-key name annotation options)
+  ;; A future version could rename create-deployment as deploy.
+  (defn deploy
+    "Creates or updates an deployment. If id is given, updates. If id is
+    missing, creates a new deployment."
+    ([token appkey name deployment]
+       (create-deployment token appkey name deployment nil))
+    ([token appkey name deployment options]
+       (if (map? deployment)
+         (create-deployment token appkey name deployment options)
          (do
-           ;; user api-key name id annotation
-           (update-annotation user api-key name annotation options)
+           ;; token appkey name id deployment
+           (update-deployment token appkey name deployment options)
            (when @warn-on-deprecate
              (reset! warn-on-deprecate false)
              (logging/warn
-              (str "`annotate` called for annotation update is deprecated. "
-                   "Please use update-annotation."))))))))
+              (str "`deploy` called for deployment update is deprecated. "
+                   "Please use update-deployment."))))))))
 
-(defn annotation
-  "Find a particular annotation event.
+(defn deployment
+  "Find a particular deployment event.
 
-  See http://dev.bigpanda.com/v1/get/annotations/:name/events/:id"
-  ([user api-key name id]
-     (annotation user api-key name id nil))
-  ([user api-key name id options]
+  See http://dev.bigpanda.com/v1/get/deployments/:name/events/:id"
+  ([token appkey name id]
+     (deployment token appkey name id nil))
+  ([token appkey name id options]
      (assert name)
      (assert id)
      (try+
-      (-> (client/get (uri "annotations" name id)
+      (-> (client/get (uri "deployments" name id)
                       (merge
                        options
-                       (request user api-key {})))
+                       (request token appkey {})))
           :body
           json/parse-string
           parse-kw)
