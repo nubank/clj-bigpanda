@@ -10,8 +10,8 @@ Feel free to contribute!
 (require '[clj-bigpanda.events :as events])
 
 ; pass it your token, app key and a list of alerts
-(events/collate "me@mydomain.com" "my-api-key" [{:name "gauge 1" :value 34 } {:name "gauge 2" :value 0}] 
-                                                [{:name "a counter" :value 79213}])
+(events/collate "16570a3212d52d66b839629c0b32f22c" "f8d7c868aa9ea512f362eb2a9c71d346" {:status "critical" :host "my-db-1" :check "CPU"})
+(events/collate "981312token123" "appkey1239" {:status "critical" :host "my-db-1" :check "CPU"})
 ````
 
 ## License

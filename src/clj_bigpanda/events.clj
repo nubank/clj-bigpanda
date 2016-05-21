@@ -46,29 +46,29 @@
   "Constructs the HTTP client request map.
   options will be merged verbatim into the request map."
   ([token appkey params]
-   {:basic-auth [token appkey]
+   {:oauth-token token
     :content-type :json
     :accept :json
     :throw-entire-message? true
     :query-params (unparse-kw params)})
   ([token appkey params body]
+   (print body)
    (assoc (request token appkey params)
-     :body (json/generate-string (unparse-kw body)))))
+     :body (json/generate-string (unparse-kw (assoc body :app_key appkey))))))
 
-(defn collate
-  "Posts a set of alerts and counters. options is a map of clj-http options."
-  ([token appkey alerts counters]
-     (collate token appkey alerts counters nil))
-  ([token appkey alerts counters options]
-     (assert (every? :name alerts))
-     (assert (every? :name counters))
-     (assert (every? :value alerts))
-     (assert (every? :value counters))
-     (client/post (uri "")
+(defn create-alert
+  "Posts a set of alerts. options is a map of clj-http options."
+  ([token appkey alerts]
+     (create-alert token appkey alerts nil))
+  ([token appkey alerts options]
+     (assert (:status alerts) ":status undefined")
+     (assert (:host alerts) ":host undefined")
+     (assert (:check alerts) ":check undefined")
+     (client/post (uri "alerts")
                   (merge
                    options
-                   (request token appkey {}
-                            {:alerts alerts :counters counters})))))
+                   {:debug true :debug-body true}
+                   (request token appkey {} alerts)))))
 
 (defn event
   "Gets an event by name.
@@ -82,7 +82,7 @@
   ([token appkey name params options]
    (assert name)
    (try+
-     (let [body (-> (client/get (uri "events" name)
+     (let [body (-> (client/get (uri "" name)
                                 (merge
                                  options
                                  (request token appkey params)))
