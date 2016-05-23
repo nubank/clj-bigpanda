@@ -6,16 +6,35 @@ Feel free to contribute!
 
 ## Usage
 
+### Alerts
+
 ````clojure
 (require '[clj-bigpanda.events :as events])
-
-; pass it your token, app key and a list of alerts
-(events/collate "16570a3212d52d66b839629c0b32f22c" "f8d7c868aa9ea512f362eb2a9c71d346" {:status "critical" :host "my-db-1" :check "CPU"})
-(events/collate "981312token123" "appkey1239" {:status "critical" :host "my-db-1" :check "CPU"})
+; set token and appkey
+(def bigpanda-auth {:token "123123-my-token" :appkey "312312-my-appkey"})
+; pass it your auth and an alert
+(events/create-alert bigpanda-auth {:status "critical" :host "my-db-1" :check "CPU"})
 ````
+
+### Deployments
+
+````clojure
+(require '[clj-bigpanda.events :as events])
+; set token and appkey
+(def bigpanda-auth {:token "123123-my-token" :appkey "312312-my-appkey"})
+; pass it your auth and a deployment start
+(events/start-deployment bigpanda-auth {:hosts ["prod-api-1", "prod-api-2"] :version "0.8.2" :component "billing"})
+; pass it your auth and a deployment end
+(events/end-deployment bigpanda-auth {:hosts ["prod-api-1", "prod-api-2"] :version "0.8.2" :component "billing" :status "success"})
+
+## Tests
+
+Run tests with `lein test`
 
 ## License
 
 Copyright (C) 2016 Nubank <tech@nubank.com.br>
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+Based on clj-librato project: https://github.com/aphyr/clj-librato
