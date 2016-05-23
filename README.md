@@ -26,6 +26,7 @@ Feel free to contribute!
 (events/start-deployment bigpanda-auth {:hosts ["prod-api-1", "prod-api-2"] :version "0.8.2" :component "billing"})
 ; pass it your auth and a deployment end
 (events/end-deployment bigpanda-auth {:hosts ["prod-api-1", "prod-api-2"] :version "0.8.2" :component "billing" :status "success"})
+````
 
 ## Tests
 
